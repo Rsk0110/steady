@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'"
+    />
+    <meta name="referrer" content="no-referrer" />
+    <title>Steady: ladder safety with your phone</title>
+    <meta name="description" content="Use your phone's motion sensors to set a safe ladder angle, test for wobble, run a pre-climb check and get a fall alarm. Works offline." />
+    <meta name="theme-color" content="#14213d" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="wrap top-row">
+        <span class="brand"><img src="icon.svg" alt="" width="30" height="30" /> Steady</span>
+        <button id="sound" class="pill" aria-pressed="true" title="Sound guidance">🔊 Sound on</button>
+      </div>
+      <nav class="wrap steps" aria-label="Steps">
+        <button class="step is-on" data-view="angle"><b>1</b> Angle</button>
+        <button class="step" data-view="wobble"><b>2</b> Wobble</button>
+        <button class="step" data-view="check"><b>3</b> Check</button>
+        <button class="step" data-view="spotter"><b>4</b> Spotter</button>
+      </nav>
+    </header>
+
+    <main class="wrap" id="main">
+      <!-- sensor gate -->
+      <section id="gate" class="card gate">
+        <h1>Your phone is a ladder-safety partner</h1>
+        <p>Steady uses your phone’s motion sensors to get the ladder angle right, test for wobble, and raise the alarm if you fall.</p>
+        <button id="start" class="btn primary big">Start sensors</button>
+        <p class="small">Everything stays on your phone. No account, no tracking, works offline.</p>
+        <p id="demo-note" class="demo-note" hidden>
+          No motion sensors found, so you’re in <b>demo mode</b>. Use the sliders and buttons to see how Steady responds. Open this page on a phone to use it for real.
+        </p>
+      </section>
+
+      <!-- 1 ANGLE -->
+      <section id="view-angle" class="view" aria-labelledby="angle-h">
+        <h2 id="angle-h" class="sr">Ladder angle</h2>
+        <div class="card how">
+          <span class="how-ico" aria-hidden="true">📱</span>
+          <p><b>Lay the phone flat against a side rail</b>, long edge along the rail. Move the ladder until the card turns green.</p>
+        </div>
+        <div class="card gauge-card" id="angle-card" data-state="invalid">
+          <svg viewBox="0 0 320 240" class="scene" role="img" aria-labelledby="angle-read">
+            <defs>
+              <linearGradient id="wall" x1="0" x2="1"><stop offset="0" stop-color="var(--wall-1)" /><stop offset="1" stop-color="var(--wall-2)" /></linearGradient>
+            </defs>
+            <rect x="250" y="10" width="60" height="210" fill="url(#wall)" />
+            <line x1="10" y1="220" x2="310" y2="220" class="ground" />
+            <path id="zone" class="zone" d="" />
+            <g id="ladder">
+              <line id="rail-a" class="rail" />
+              <line id="rail-b" class="rail" />
+              <g id="rungs"></g>
+            </g>
+            <path id="arc" class="arc" d="" />
+            <text id="arc-label" class="arc-label" x="0" y="0"></text>
+          </svg>
+          <div class="readout">
+            <p class="deg" id="angle-read" aria-live="polite"><span id="angle-num">--</span><small>°</small></p>
+            <p class="state-title" id="angle-title">Lay the phone along the rail</p>
+            <p class="state-tip" id="angle-tip">Hold its long edge flat against one side rail of the ladder.</p>
+          </div>
+        </div>
+        <div class="card length">
+          <label for="len">Ladder length in use <span class="small">(optional, for exact advice)</span></label>
+          <div class="len-row">
+            <input id="len" type="number" inputmode="decimal" min="0.5" max="30" step="0.1" placeholder="e.g. 4" />
+            <select id="unit" aria-label="Unit"><option value="m">metres</option><option value="ft">feet</option></select>
+          </div>
+          <p id="advice" class="advice">Safe rule: the base should be 1 unit out for every 4 units of height (about 76°).</p>
+        </div>
+        <div class="card demo" data-demo hidden>
+          <label for="demo-angle">Demo: tilt the ladder <output id="demo-angle-out">65°</output></label>
+          <input id="demo-angle" type="range" min="40" max="90" step="0.5" value="65" />
+        </div>
+        <button class="btn primary next" data-go="wobble">Angle looks good: next</button>
+      </section>
+
+      <!-- 2 WOBBLE -->
+      <section id="view-wobble" class="view" aria-labelledby="wobble-h" hidden>
+        <h2 id="wobble-h" class="sr">Wobble test</h2>
+        <div class="card how">
+          <span class="how-ico" aria-hidden="true">🪜</span>
+          <p><b>Rest the phone on a low rung</b>, tap Start, then push the ladder firmly side to side for 3 seconds.</p>
+        </div>
+        <div class="card wobble-card" id="wobble-card" data-state="idle">
+          <div class="wave" aria-hidden="true"><canvas id="wave" width="600" height="120"></canvas></div>
+          <p class="state-title" id="wobble-title">Ready when you are</p>
+          <p class="state-tip" id="wobble-tip">The test measures how much the ladder moves when pushed.</p>
+          <button id="wobble-go" class="btn primary">Start wobble test</button>
+        </div>
+        <div class="card demo" data-demo hidden>
+          <p class="small">Demo: choose how the ladder behaves, then start the test.</p>
+          <div class="seg" role="radiogroup" aria-label="Demo ladder behaviour">
+            <label><input type="radio" name="demo-wobble" value="0.1" checked /> Firm</label>
+            <label><input type="radio" name="demo-wobble" value="0.5" /> Bit loose</label>
+            <label><input type="radio" name="demo-wobble" value="1.4" /> Unstable</label>
+          </div>
+        </div>
+        <button class="btn primary next" data-go="check">Next: pre-climb check</button>
+      </section>
+
+      <!-- 3 CHECK -->
+      <section id="view-check" class="view" aria-labelledby="check-h" hidden>
+        <div class="card">
+          <h2 id="check-h">20-second pre-climb check</h2>
+          <p class="small" id="check-progress">0 of 8 done</p>
+          <ul id="checklist" class="checklist"></ul>
+        </div>
+        <button class="btn primary next" data-go="spotter" id="check-next">Next: turn on Spotter</button>
+      </section>
+
+      <!-- 4 SPOTTER -->
+      <section id="view-spotter" class="view" aria-labelledby="spot-h" hidden>
+        <div class="card" id="spot-setup">
+          <h2 id="spot-h">Spotter</h2>
+          <p>Put your phone in a pocket before you climb. If Steady feels a fall (a drop followed by a hard landing), it sounds a loud alarm and puts your emergency contact on screen. If you’re fine, tap <b>I’m OK</b>.</p>
+          <div class="contact">
+            <label for="c-name">Emergency contact name</label>
+            <input id="c-name" autocomplete="off" placeholder="e.g. Sam" />
+            <label for="c-phone">Their phone number</label>
+            <input id="c-phone" type="tel" autocomplete="off" placeholder="e.g. +1 555 0100" />
+            <label class="inline"><input type="checkbox" id="c-save" /> Remember on this phone only</label>
+          </div>
+          <button id="spot-go" class="btn primary big">Start Spotter</button>
+          <p class="small">Steady can’t call anyone automatically. It makes calling one tap away. Keep this page open while you climb.</p>
+        </div>
+        <div class="card spot-on" id="spot-on" hidden>
+          <div class="pulse" aria-hidden="true"></div>
+          <h2>Spotter is on</h2>
+          <p>Climb safely. Keep three points of contact.</p>
+          <p class="small" id="spot-meta"></p>
+          <button id="spot-stop" class="btn">I’m down safely: stop</button>
+          <button id="spot-sim" class="btn ghost" data-demo hidden>Demo: simulate a fall</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- fall alarm -->
+    <div id="alarm" class="alarm" role="alertdialog" aria-modal="true" aria-labelledby="alarm-h" hidden>
+      <h2 id="alarm-h">Did you fall?</h2>
+      <p class="count"><span id="alarm-count">30</span>s</p>
+      <button id="ok" class="btn big ok">I’m OK</button>
+      <a id="call-contact" class="btn big call" href="#">Call contact</a>
+      <p class="small">If you’re hurt, call your local emergency number.</p>
+    </div>
+
+    <footer class="wrap foot">
+      <p>Steady is a guide, not certified safety equipment. Always follow your ladder’s instructions and local safety rules.</p>
+      <p><a href="https://github.com/Rsk0110/steady">Open source</a> · built for SafeSpace Hacks 2026</p>
+    </footer>
+
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>

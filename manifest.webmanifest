@@ -1,0 +1,12 @@
+{
+  "name": "Steady: ladder safety",
+  "short_name": "Steady",
+  "description": "Set a safe ladder angle, test for wobble, and get a fall alarm using your phone's sensors.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f1ec",
+  "theme_color": "#14213d",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
